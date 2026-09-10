@@ -19,3 +19,39 @@ Design a pricing or adjustment interface for coupons, item discounts, and future
 Part 3 - Persistence and testing
 Explain optimistic concurrency, idempotent commands, serialization, and tests for interacting changes.
 """
+
+class Cart:
+    def __init__(self):
+        self.items = {}
+        self.subtotal = 0.0
+
+    def add_item(self, product_id, quantity, unit_price):
+        if product_id in self.items:
+            self.items[product_id]['quantity'] += quantity
+        else:
+            self.items[product_id] = {'quantity': quantity, 'unit_price': unit_price}
+        self.update_subtotal()
+
+    def remove_item(self, product_id):
+        if product_id in self.items:
+            del self.items[product_id]
+            self.update_subtotal()
+
+    def change_quantity(self, product_id, new_quantity):
+        if product_id in self.items and new_quantity > 0:
+            self.items[product_id]['quantity'] = new_quantity
+            self.update_subtotal()
+        elif new_quantity <= 0:
+            self.remove_item(product_id)
+
+    def update_subtotal(self):
+        self.subtotal = sum(item['quantity'] * item['unit_price'] for item in self.items.values())
+
+    def apply_pricing_adjustment(self, adjustment):
+        adjustment.apply(self)
+
+    def get_summary(self):
+        return {
+            'items': self.items,
+            'subtotal': self.subtotal
+        }
