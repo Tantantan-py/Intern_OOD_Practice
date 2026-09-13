@@ -47,11 +47,38 @@ class Cart:
     def update_subtotal(self):
         self.subtotal = sum(item['quantity'] * item['unit_price'] for item in self.items.values())
 
-    def apply_pricing_adjustment(self, adjustment):
-        adjustment.apply(self)
 
-    def get_summary(self):
-        return {
-            'items': self.items,
-            'subtotal': self.subtotal
-        }
+class Item:
+    def __init__(self, product_id, quantity, unit_price):
+        self.product_id = product_id
+        self.quantity = quantity
+        self.unit_price = unit_price
+
+
+class pricingAdjustment:
+    def apply(self, cart):
+        raise NotImplementedError("Subclasses should implement this method.")
+
+
+class Coupon(pricingAdjustment):
+    def __init__(self, discount_amount):
+        self.discount_amount = discount_amount
+
+    def apply(self, cart):
+        cart.subtotal -= self.discount_amount
+        if cart.subtotal < 0:
+            cart.subtotal = 0.0
+
+
+class ItemDiscount(pricingAdjustment):
+    def __init__(self, product_id, discount_amount):
+        self.product_id = product_id
+        self.discount_amount = discount_amount
+
+    def apply(self, cart):
+        if self.product_id in cart.items:
+            item = cart.items[self.product_id]
+            item['unit_price'] -= self.discount_amount
+            if item['unit_price'] < 0:
+                item['unit_price'] = 0.0
+            cart.update_subtotal()
