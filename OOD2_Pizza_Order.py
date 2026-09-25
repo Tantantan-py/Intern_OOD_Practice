@@ -53,3 +53,105 @@ Out of Scope:
 
 7. Inventory Management — No automated stock tracking or forecasting.
 """
+
+from enum import Enum
+from pydantic import BaseModel, Field, field_validator
+
+
+class Size(str, Enum):
+    SMALL = "small"
+    MEDIUM = "medium"
+    LARGE = "large"
+
+
+class Crust(str, Enum):
+    THIN = "thin"
+    REGULAR = "regular"
+    DEEP_DISH = "deep_dish"
+
+
+class OrderStatus(str, Enum):
+    PLACED = "placed"
+    PREPARING = "preparing"
+    BAKING = "baking"
+    READY = "ready"
+    DELIVERED = "delivered"
+
+
+class OrderType(str, Enum):
+    PICKUP = "pickup"
+    DELIVERY = "delivery"
+
+
+class PaymentMethod(str, Enum):
+    CASH = "cash"
+    CARD = "card"
+    DIGITAL_WALLET = "digital_wallet"
+
+
+class PaymentStatus(str, Enum):
+    PENDING = "pending"
+    SUCCESS = "success"
+    FAILED = "failed"
+
+
+class Ingredient(BaseModel):
+    name: str
+
+
+class Topping(BaseModel):
+    name: str
+    price: float = Field(ge=0)
+    is_available: bool = True
+
+
+class Pizza(BaseModel):
+    name: str
+    description: str
+    base_ingredients: List[Ingredient]
+    base_price: float = Field(ge=0)
+
+
+class CustomizedPizza(BaseModel):
+    menu_pizza: Pizza
+    size: Size
+    crust: Crust
+    toppings: List[Topping] = []
+
+    @field_validator("toppings")
+    def validate_toppings(cls, toppings):
+        unavailable = [t.name for t in toppings if not t.is_available]
+        if unavailable:
+            raise ValueError(f"Unavailable toppings: {', '.join(unavailable)}")
+        return toppings
+
+
+class OrderItem(BaseModel):
+    pizza: CustomizedPizza
+    quantity: int = Field(gt=0)
+
+
+class Address(BaseModel):
+    street: str
+    city: str
+    zip: str
+
+
+class Payment(BaseModel):
+    method: PaymentMethod
+    status: PaymentStatus = PaymentStatus.PENDING
+    amount: float = Field(ge=0)
+
+
+class Order(BaseModel):
+    items: List[OrderItem]
+    order_type: OrderType
+    delivery_address: Optional[Address] = None
+    status: OrderStatus = OrderStatus.PLACED
+    payment: Optional[Payment] = None
+
+    @field_validator("delivery_address")
+    def validate_delivery(cls, addr, info):
+        if info.data["order_type"] == OrderType.DELIVERY and addr is None:
+            raise ValueError("Delivery address required for delivery orders.")
+        return addr
