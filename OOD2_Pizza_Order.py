@@ -9,3 +9,21 @@ Design the core object-oriented model for a pizza ordering system used by a smal
 - pay using different payment methods,
 - track order status such as placed, preparing, baking, ready, and delivered.
 """
+
+"""
+Clarification
+1. core requirements
+2. edge cases / error handling
+3. out of scope
+"""
+
+"""
+FR:
+1. 
+
+Edge cases:
+1.
+
+Out of Scope:
+1. 
+"""
